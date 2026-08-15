@@ -1,22 +1,18 @@
 import { create } from 'zustand'
-
-type AuthUser = {
-  id: string
-  email: string
-} | null
+import type { Session, User } from '@supabase/supabase-js'
 
 type AuthStore = {
-  user: AuthUser
+  session: Session | null
+  user: User | null
   isLoading: boolean
-  setUser: (user: AuthUser) => void
+  setSession: (session: Session | null) => void
   setLoading: (loading: boolean) => void
-  signOut: () => void
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
+  session: null,
   user: null,
-  isLoading: false,
-  setUser: (user) => set({ user }),
+  isLoading: true, // true on first load while we check for an existing session
+  setSession: (session) => set({ session, user: session?.user ?? null }),
   setLoading: (isLoading) => set({ isLoading }),
-  signOut: () => set({ user: null }),
 }))

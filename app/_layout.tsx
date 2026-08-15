@@ -1,21 +1,38 @@
 import { useEffect } from 'react'
-import { Stack, router } from 'expo-router'
+import { Stack } from 'expo-router'
 import { useColorScheme } from 'react-native'
 import { Colors } from '@/constants/colors'
 import { useAuthStore } from '@/store/useAuthStore'
+import { supabase } from '@/lib/supabase'
+import { router } from 'expo-router'
 
 export default function RootLayout() {
   const scheme = useColorScheme()
   const isDark = scheme === 'dark'
-  const { user } = useAuthStore()
+  const { session, setSession, setLoading } = useAuthStore()
 
   useEffect(() => {
-    if (user) {
+    // Check for an existing session on app launch
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
+
+    // Listen for sign-in / sign-out events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (session) {
       router.replace('/(tabs)/' as never)
     } else {
       router.replace('/(auth)/sign-in' as never)
     }
-  }, [user])
+  }, [session])
 
   return (
     <Stack

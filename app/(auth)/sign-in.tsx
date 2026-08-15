@@ -11,11 +11,11 @@ import {
   useColorScheme,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Link, router } from 'expo-router'
+import { Link } from 'expo-router'
 import { useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors } from '@/constants/colors'
-import { useAuthStore } from '@/store/useAuthStore'
+import { supabase } from '@/lib/supabase'
 
 export default function SignInScreen() {
   const scheme = useColorScheme()
@@ -24,8 +24,7 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-
-  const { isLoading, setUser, setLoading } = useAuthStore()
+  const [loading, setLoading] = useState(false)
 
   const bg = isDark ? Colors.bgDark : Colors.bgLight
   const surface = isDark ? Colors.surfaceDark : Colors.surfaceLight
@@ -40,13 +39,19 @@ export default function SignInScreen() {
       return
     }
 
-    // UI-only mock sign-in — will be wired to Supabase later
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      setUser({ id: 'mock-id', email: email.trim() })
-      router.replace('/(tabs)/' as never)
-    }, 1000)
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    setLoading(false)
+
+    if (authError) {
+      setError(authError.message)
+      return
+    }
+
+    // Navigation is handled automatically by onAuthStateChange in _layout.tsx
   }
 
   return (
@@ -86,11 +91,7 @@ export default function SignInScreen() {
               <TextInput
                 style={[
                   styles.input,
-                  {
-                    backgroundColor: surface,
-                    borderColor: border,
-                    color: textPrimary,
-                  },
+                  { backgroundColor: surface, borderColor: border, color: textPrimary },
                 ]}
                 placeholder="you@example.com"
                 placeholderTextColor={isDark ? Colors.textTertiaryDark : Colors.textTertiary}
@@ -108,11 +109,7 @@ export default function SignInScreen() {
               <TextInput
                 style={[
                   styles.input,
-                  {
-                    backgroundColor: surface,
-                    borderColor: border,
-                    color: textPrimary,
-                  },
+                  { backgroundColor: surface, borderColor: border, color: textPrimary },
                 ]}
                 placeholder="••••••••"
                 placeholderTextColor={isDark ? Colors.textTertiaryDark : Colors.textTertiary}
@@ -123,17 +120,15 @@ export default function SignInScreen() {
               />
             </View>
 
-            {error ? (
-              <Text style={styles.errorText}>{error}</Text>
-            ) : null}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <TouchableOpacity
-              style={[styles.primaryBtn, isLoading && styles.primaryBtnDisabled]}
+              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
               onPress={handleSignIn}
               activeOpacity={0.85}
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? (
+              {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.primaryBtnText}>Sign in</Text>
