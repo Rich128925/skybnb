@@ -55,6 +55,7 @@ export default function SignUpScreen() {
       options: {
         data: {
           full_name: fullName.trim(),
+          role: 'user',
         },
       },
     })

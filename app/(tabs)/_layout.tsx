@@ -1,10 +1,17 @@
-import { Tabs } from 'expo-router'
-import { Colors } from '@/constants/colors'
+import { Redirect, Tabs } from 'expo-router'
 import { useColorScheme } from 'react-native'
+import { Colors } from '@/constants/colors'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export default function TabsLayout() {
   const scheme = useColorScheme()
   const isDark = scheme === 'dark'
+  const { session, isLoading } = useAuthStore()
+
+  // Guard: unauthenticated users go back to sign-in
+  if (!isLoading && !session) {
+    return <Redirect href={'/(auth)/sign-in' as never} />
+  }
 
   return (
     <Tabs
